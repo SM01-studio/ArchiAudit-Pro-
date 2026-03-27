@@ -25,3 +25,6 @@ dist-ssr
 backend/venv/
 node_modules/
 dist/
+.env
+backend/.env
+LOG.md
