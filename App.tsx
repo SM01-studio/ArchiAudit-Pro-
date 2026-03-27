@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AppStep, OptimizationRequest, AnalysisReport, OptimizedOption, LayoutRequirements } from './types';
 import { StepInput } from './components/StepInput';
 import { StepAnalysis } from './components/StepAnalysis';
@@ -9,8 +9,29 @@ import { StepOptimization } from './components/StepOptimization';
 import { StepFinal } from './components/StepFinal';
 import { StepWallErase } from './components/StepWallErase';
 import { CoverPage } from './components/CoverPage';
+import { verifyAuth, redirectToLogin } from './services/authService';
 
 const App: React.FC = () => {
+  const [isAuthChecked, setIsAuthChecked] = useState(false);
+
+  useEffect(() => {
+    verifyAuth().then(({ valid }) => {
+      if (!valid) {
+        redirectToLogin();
+      } else {
+        setIsAuthChecked(true);
+      }
+    });
+  }, []);
+
+  if (!isAuthChecked) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#0a0a0f' }}>
+        <div style={{ color: '#a0a0b0', fontSize: '1.1rem' }}>验证登录中...</div>
+      </div>
+    );
+  }
+
   // Start at COVER page
   const [step, setStep] = useState<AppStep>(AppStep.COVER);
   const [requestData, setRequestData] = useState<OptimizationRequest | null>(null);

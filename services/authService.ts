@@ -70,8 +70,7 @@ export async function verifyAuth(): Promise<{ valid: boolean; user?: any }> {
     }
 
     return { valid: false };
-  } catch (error) {
-    console.error('Auth verification failed:', error);
+  } catch {
     return { valid: false };
   }
 }
