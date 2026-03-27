@@ -13,6 +13,15 @@ import { verifyAuth, redirectToLogin } from './services/authService';
 
 const App: React.FC = () => {
   const [isAuthChecked, setIsAuthChecked] = useState(false);
+  // Start at COVER page
+  const [step, setStep] = useState<AppStep>(AppStep.COVER);
+  const [requestData, setRequestData] = useState<OptimizationRequest | null>(null);
+  const [analysisResult, setAnalysisResult] = useState<AnalysisReport | null>(null);
+  const [layoutRequirements, setLayoutRequirements] = useState<LayoutRequirements | null>(null);
+  const [selectedOption, setSelectedOption] = useState<OptimizedOption | null>(null);
+  const [confirmedPrompt, setConfirmedPrompt] = useState<string>(''); // 新增：确认后的优化指令
+  const [erasedImage, setErasedImage] = useState<string | null>(null); // 擦除后的图片
+  const [originalImage, setOriginalImage] = useState<string | null>(null); // 原始图片（Erase 前）
 
   useEffect(() => {
     verifyAuth().then(({ valid }) => {
@@ -31,16 +40,6 @@ const App: React.FC = () => {
       </div>
     );
   }
-
-  // Start at COVER page
-  const [step, setStep] = useState<AppStep>(AppStep.COVER);
-  const [requestData, setRequestData] = useState<OptimizationRequest | null>(null);
-  const [analysisResult, setAnalysisResult] = useState<AnalysisReport | null>(null);
-  const [layoutRequirements, setLayoutRequirements] = useState<LayoutRequirements | null>(null);
-  const [selectedOption, setSelectedOption] = useState<OptimizedOption | null>(null);
-  const [confirmedPrompt, setConfirmedPrompt] = useState<string>(''); // 新增：确认后的优化指令
-  const [erasedImage, setErasedImage] = useState<string | null>(null); // 擦除后的图片
-  const [originalImage, setOriginalImage] = useState<string | null>(null); // 原始图片（Erase 前）
 
   const handleStart = () => {
     setStep(AppStep.INPUT);
