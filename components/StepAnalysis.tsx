@@ -8,29 +8,42 @@ interface Props {
   onComplete: (report: AnalysisReport) => void;
 }
 
+// 格式化时间为 mm:ss
+const formatTime = (seconds: number): string => {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+};
+
 export const StepAnalysis: React.FC<Props> = ({ request, onComplete }) => {
   const [loading, setLoading] = useState(true);
   const [report, setReport] = useState<AnalysisReport | null>(null);
   const [logs, setLogs] = useState<string[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [elapsedTime, setElapsedTime] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const apiCallMade = useRef(false);
+  const startTimeRef = useRef(Date.now());
 
+  // 日志动画 - 始终运行
   useEffect(() => {
-    // Simulate a terminal-like process log before showing results
     const steps = [
         "Initializing Design Director Agent...",
         "Identifying Plan Type & Constraints...",
-        "Connecting to Google Search Knowledge Base...",
-        "SEARCHING: 'Residential Layout Standards 2024'...",
-        "SEARCHING: 'Optimal Dimensions for Luxury Housing'...",
-        "Comparing plan against retrieved standards...",
+        "Connecting to GEMINI Model...",
+        "ANALYZING: Layout Structure...",
+        "ANALYZING: Room Dimensions...",
+        "Comparing plan against luxury standards...",
         "Analyzing Circulation & Sightlines...",
         "Generating Master Architect Report..."
     ];
 
     let currentStep = 0;
+
     const interval = setInterval(() => {
         if (currentStep < steps.length) {
-            setLogs(prev => [...prev, steps[currentStep]]);
+            const stepElapsed = Math.floor((Date.now() - startTimeRef.current) / 1000);
+            setLogs(prev => [...prev, `[${formatTime(stepElapsed)}] ${steps[currentStep]}`]);
             currentStep++;
             // Auto scroll
             if (scrollRef.current) {
@@ -39,28 +52,68 @@ export const StepAnalysis: React.FC<Props> = ({ request, onComplete }) => {
         } else {
             clearInterval(interval);
         }
-    }, 1000); // Slightly slower to allow read
-
-    // Call API
-    analyzeFloorPlan(request).then(data => {
-        // Wait for logs to finish mostly
-        setTimeout(() => {
-            setReport(data);
-            setLoading(false);
-        }, steps.length * 1000 + 500);
-    });
+    }, 800); // 稍微加快一点
 
     return () => clearInterval(interval);
+  }, []);
+
+  // 计时器 - 始终运行
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setElapsedTime(Math.floor((Date.now() - startTimeRef.current) / 1000));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // API 调用 - 只调用一次
+  useEffect(() => {
+    // 防止 React StrictMode 双重调用
+    if (apiCallMade.current) return;
+    apiCallMade.current = true;
+
+    analyzeFloorPlan(request)
+        .then(data => {
+            const totalElapsed = Math.floor((Date.now() - startTimeRef.current) / 1000);
+
+            // 检查是否是 fallback 响应（服务繁忙）
+            if (data.summary && data.summary.includes('currently experiencing high traffic')) {
+              setLogs(prev => [...prev, `[${formatTime(totalElapsed)}] WARN: API busy, using fallback`]);
+              setError('Analysis service is busy. Please try again.');
+              setLoading(false);
+              return;
+            }
+
+            setLogs(prev => [...prev, `[${formatTime(totalElapsed)}] ✓ Analysis Complete!`]);
+            // Wait a moment before showing results
+            setTimeout(() => {
+                setReport(data);
+                setLoading(false);
+            }, 500);
+        })
+        .catch(err => {
+            const totalElapsed = Math.floor((Date.now() - startTimeRef.current) / 1000);
+            console.error('Analysis failed:', err);
+            setLogs(prev => [...prev, `[${formatTime(totalElapsed)}] ERROR: ${err.message || 'Analysis failed'}`]);
+            setTimeout(() => {
+                setError(err.message || 'Analysis failed. Please check your connection and try again.');
+                setLoading(false);
+            }, 1000);
+        });
   }, [request]);
 
   if (loading) {
     return (
         <div className="max-w-3xl mx-auto text-center space-y-6">
-            <h2 className="font-hand text-3xl font-bold animate-pulse">Analyzing Floor Plan... / 正在分析...</h2>
+            <div className="flex justify-center items-center gap-4">
+              <h2 className="font-hand text-3xl font-bold animate-pulse">Analyzing Floor Plan... / 正在分析...</h2>
+              <span className="font-mono text-2xl font-bold text-blue-600 bg-blue-100 px-3 py-1 rounded">
+                {formatTime(elapsedTime)}
+              </span>
+            </div>
             <SketchCard className="bg-black text-green-400 font-mono text-left h-64 overflow-y-auto" >
                 <div ref={scrollRef} className="space-y-2">
-                    {logs.map((log, i) => (
-                        <div key={i} className="flex items-center gap-2">
+                    {logs.filter(Boolean).map((log, i) => (
+                        <div key={i} className={`flex items-center gap-2 ${log?.includes('ERROR') ? 'text-red-400' : log?.includes('WARN') ? 'text-yellow-400' : log?.includes('✓') ? 'text-green-300' : ''}`}>
                             <span>{'>'}</span>
                             <span>{log}</span>
                         </div>
@@ -68,7 +121,22 @@ export const StepAnalysis: React.FC<Props> = ({ request, onComplete }) => {
                     <div className="animate-pulse">_</div>
                 </div>
             </SketchCard>
-            <p className="font-hand text-gray-500 text-sm">Powered by Google Search Grounding & Gemini</p>
+            <p className="font-hand text-gray-500 text-sm">Powered by GEMINI Model</p>
+        </div>
+    );
+  }
+
+  if (error) {
+    return (
+        <div className="max-w-3xl mx-auto text-center space-y-6">
+            <h2 className="font-hand text-3xl font-bold text-red-600">Analysis Failed / 分析失败</h2>
+            <SketchCard className="bg-red-50 border-red-300">
+                <p className="font-hand text-lg text-red-700">{error}</p>
+                <p className="font-hand text-sm text-gray-600 mt-2">请检查网络连接或后端服务是否正常运行</p>
+            </SketchCard>
+            <SketchButton onClick={() => window.location.reload()}>
+                Retry / 重试
+            </SketchButton>
         </div>
     );
   }

@@ -51,7 +51,7 @@ export const CoverPage: React.FC<Props> = ({ onStart }) => {
             <div className="flex justify-center gap-8 mb-10 text-gray-600 font-hand text-sm uppercase tracking-widest">
                 <span className="flex items-center gap-1">✦ Design Audit</span>
                 <span className="flex items-center gap-1">✦ Layout Optimization</span>
-                <span className="flex items-center gap-1">✦ Gemini 2.5 Flash</span>
+                <span className="flex items-center gap-1">✦ GEMINI 3.1</span>
             </div>
 
             <div className="flex justify-center">
@@ -67,7 +67,7 @@ export const CoverPage: React.FC<Props> = ({ onStart }) => {
 
       {/* Footer copyright on cover */}
       <div className="absolute bottom-6 text-gray-400 font-hand text-sm z-10">
-        &copy; 2024 ArchiAudit Design Studio. Powered by Google GenAI.
+        &copy; 2026 ArchiAudit . Powered by Ma Siliang
       </div>
     </div>
   );

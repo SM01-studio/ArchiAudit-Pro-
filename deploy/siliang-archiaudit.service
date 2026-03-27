@@ -1,0 +1,18 @@
+[Unit]
+Description=ArchiAudit Pro Backend
+After=network.target
+
+[Service]
+User=root
+WorkingDirectory=/www/siliang-ai-lab/archiaudit
+ExecStart=/www/siliang-ai-lab/venv/bin/gunicorn --bind 127.0.0.1:5003 --workers 2 --timeout 120 app:app
+Restart=always
+RestartSec=5
+
+Environment=GEMINI_API_KEY=your_gemini_api_key_here
+Environment=MAIN_PORTAL_API=https://api.siliang.cfd
+Environment=DEV_MODE=false
+Environment=PORT=5003
+
+[Install]
+WantedBy=multi-user.target
